@@ -9,7 +9,7 @@ namespace Document
             Console.WriteLine("Hello World!");
 
 
-            Console.Readline();
+            Console.ReadLine();
         }
     }
 }

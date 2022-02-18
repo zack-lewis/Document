@@ -33,9 +33,10 @@ namespace Document
                     showException(ex);
                 }
                 
-                // Get the Document Word Count
+                
                 if(writeSuccess) {
                     try {
+                        // Get the Document Word Count
                         documentWordCount = getWordCount(document);
 
                         // If an exception does not occur, output “[filename] was successfully saved. The document contains [count] words.” and exit. [filename] and [count] are placeholders for the filename of the document and the number of words it contains.
@@ -56,6 +57,11 @@ namespace Document
 
             // Console.Write("Press ENTER to exit");
             // Console.ReadLine();
+        }
+
+        static void showMessage(string msg) {
+            // If fancy formatting is wanted, add it here
+            Console.WriteLine($"-> { msg }");
         }
 
         static void showException(Exception ex) {
@@ -186,9 +192,11 @@ namespace Document
                 // check for invalid characters
                 if(containsInvalidCharacters(input)) {
                     input = null;
+                    showMessage("Filename cannot contain invalid characters");
                 }
                 if(input == "") {
                     input = null;
+                    showMessage("Filename cannot be blank");
                 }
             } while(input == null);    
             

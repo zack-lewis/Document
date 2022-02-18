@@ -10,6 +10,7 @@ namespace Document
         {
             string document = "";
             bool repeat = false;  
+            bool writeSuccess = false;
             int documentWordCount = 0;       
             // Display “Document” followed by a blank line.
             displayWelcome();
@@ -26,56 +27,131 @@ namespace Document
                 // Save the content to a file in the current directory.
                 // If an exception occurs, output the exception message.
                 try {
-                    writeToFile(documentContents, document);
+                    writeSuccess = writeToFile(documentContents, document);
                 }
-                catch (System.Exception ex) {
-                    Console.WriteLine(ex.StackTrace);
-                    throw;
+                catch (Exception ex) {
+                    showException(ex);
                 }
                 
-                documentWordCount = getWordCount(document);
-                
-                // If an exception does not occur, output “[filename] was successfully saved. The document contains [count] words.” and exit. [filename] and [count] are placeholders for the filename of the document and the number of words it contains.
-                Console.WriteLine($"'{ document }' was successfully saved. The document contains {documentWordCount} words.");
+                // Get the Document Word Count
+                if(writeSuccess) {
+                    try {
+                        documentWordCount = getWordCount(document);
 
+                        // If an exception does not occur, output “[filename] was successfully saved. The document contains [count] words.” and exit. [filename] and [count] are placeholders for the filename of the document and the number of words it contains.
+                        Console.WriteLine($"'{ document }' was successfully saved. The document contains {documentWordCount} words.");
+                    }  
+                    catch(Exception ex) {
+                        showException(ex);
+                    }
+                }
+                
                 // After the document is saved or fails to save, prompt the user if they want to save another document. If they do, run the program again. If not, exit the program.
+                Console.WriteLine("Would you like to add more to a file? (y/N)");
+                string input = Console.ReadLine();
+
+                repeat = consoleStringtoBool(input);
 
             } while (repeat);
 
-            Console.Write("Press ENTER to exit");
-            Console.ReadLine();
+            // Console.Write("Press ENTER to exit");
+            // Console.ReadLine();
         }
 
+        static void showException(Exception ex) {
+            Console.WriteLine("--------------------");
+            Console.WriteLine("Something went wrong");
+            Console.WriteLine("--------------------");
+            Console.WriteLine(ex.Message);
+            Console.WriteLine(ex.GetType());
+            Console.WriteLine(ex.StackTrace);
+        }
 
-        static int getWordCount(string document) {
-            int output = 0;
-            char[] splitters = new char[] {' ', '\r', '\n'};
-            using(StreamReader documentStream = new StreamReader(document)) {
-                do {
-                    string nextLine = documentStream.ReadLine();
-                    nextLine.Split(splitters,StringSplitOptions.RemoveEmptyEntries);
-                    output += nextLine.Length;
-                    Console.WriteLine(nextLine);
-                } while(!documentStream.EndOfStream);
+        static bool consoleStringtoBool(string input) {
+            bool output = false; 
+            try {
+                input = input.ToUpper();
+            }
+            catch(Exception ex) {
+                showException(ex);
+            }
+
+            if(input == "Y" || input == "YES") {
+                output = true;
+            }
+            else {
+                output = false;
             }
             return output;
         }
 
-        static void writeToFile(List<string> documentInput, string documentName) {
+        static int getWordCount(string document) {
+            int output = 0;
+            try {
+                // Open file for reading
+                using(StreamReader documentStream = new StreamReader(document)) {
+                    if(documentStream.Peek() <= 0) {
+                        return 0;
+                    }
+                    // Set character buffer for reading from file
+                    char[] character = null;
+                    // set to True if previous character was whitespace
+                    bool prevWhiteSpace = false;
+                    while(documentStream.Peek() >= 0) {
+                        character = new char[1];
+                        documentStream.Read(character, 0, character.Length);
+                        // Check for whitespace
+                        if(Char.IsWhiteSpace(character[0])) {
+                            // Make sure we don't count multiple whitespace in a row as multiple words
+                            if(!prevWhiteSpace) {
+                                output++;
+                                prevWhiteSpace = true;
+                            }
+                        }
+                        else {
+                            prevWhiteSpace = false;
+                        }
+                    }
+                }
+            }
+            catch(IOException ex) {
+                Console.WriteLine($"Error reading from file. This could be cause by an empty file. \n{ex.Message}");
+
+            }
+            catch(Exception ex) {
+                showException(ex);
+            }
+            return output;
+        }
+
+        static bool writeToFile(List<string> documentInput, string documentName) {
+            bool output = false;
+
+            if(documentInput.Count <= 0) {
+                return false;
+            }
+
             try
             {
                 // Open document for writing
                 using(StreamWriter documentStream = new StreamWriter(documentName, true)) {
                     // Write each line individually
-                    foreach(string line in documentInput){
+                    foreach(string line in documentInput) {
                         documentStream.WriteLine(line);
                     }
                 }
+                output = true;
             }
-            catch (System.Exception)
-            {
-                throw;
+            catch(IOException ex) {
+                output = false;
+                Console.WriteLine($"Error writing to file: {ex.Message}");
             }
+            catch (Exception ex) {
+                output = false;
+                showException(ex);
+            }
+
+            return output;
         }
 
         static List<string> getDocumentContents() {
@@ -118,20 +194,13 @@ namespace Document
 
             try
             {
-                // USING statement automatically disposes of streamreader object
-                using(StreamReader docStream = new StreamReader(docName)){
-                    // Attempt to read the first line, ensuring access to the file is available. 
-                    docStream.ReadLine();
+                if(!File.Exists(docName)) {
+                    Console.WriteLine($"Creating file '{ docName }'");
+                    File.Create(docName).Close();    
                 }
             }
-            catch(FileNotFoundException){ 
-                // If the file is not found, create it. Inform the user
-                Console.WriteLine($"Creating file '{ docName }'");
-                File.Create(docName);
-            }
-            catch (System.Exception) {
-                // There shouldn't be any other exceptions but if so, throw them up the chain
-                throw;
+            catch (System.Exception ex) {
+                showException(ex);
             }
 
             return docName;

@@ -187,6 +187,9 @@ namespace Document
                 if(containsInvalidCharacters(input)) {
                     input = null;
                 }
+                if(input == "") {
+                    input = null;
+                }
             } while(input == null);    
             
             // ensure file has proper extension
@@ -215,6 +218,7 @@ namespace Document
             }
             else {
                 // append .txt to end of string if it does not exist
+                input = input.TrimEnd('.');
                 output = input + ".txt";
             }
 
